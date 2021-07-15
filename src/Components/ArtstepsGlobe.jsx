@@ -25,14 +25,14 @@ const {useEffect, useRef } = React;
             <Globe
                 ref={globeEl}
                 globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-                //backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+                backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
                 bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
                 pointsData={gData}
                 pointAltitude="size"
                 pointColor="color"
                 width={800}
                 height={800}
-                backgroundColor="rgba(0,0,0,0.7)"
+                //backgroundColor="rgba(0,0,0,0.7)"
                 showGraticules={false}
                 atmosphereAltitude = {0.3}
             /> 
