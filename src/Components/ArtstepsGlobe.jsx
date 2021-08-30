@@ -1,96 +1,107 @@
 import React from 'react';
 import Globe from 'react-globe.gl';
-import bg_galaxy from '../images/night-sky2.png'
-import GeoData from '../datasets/geodata.geojson'
-import * as topojson from "topojson-client";
 import * as THREE from 'three';
 
 
-const {useState,useEffect, useRef } = React;
-const MAP_CENTER = { lat: 25, lng: 20, altitude: 0.9 };
+const {useEffect, useRef } = React;
+
 
   const ArtstepsGlobe = () => {
-    //create random data
-    // const N = 300;
-    // const gData = [...Array(N).keys()].map(() => ({
-    //     lat: (Math.random() - 0.5) * 180,
-    //     lng: (Math.random() - 0.5) * 360,
-    //     size: Math.random() / 3,
-    //     color: ['red', 'white', 'blue', 'green'][Math.round(Math.random() * 3)]
-    // }));
 
     const globeEl = useRef();
 
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
 
     useEffect(() => {
       // Auto-rotate
-      globeEl.current.pointOfView(MAP_CENTER, 10000);
       globeEl.current.controls().autoRotate = true;
-      globeEl.current.controls().autoRotateSpeed = -0.5;
+      globeEl.current.controls().autoRotateSpeed = 1;
+      globeEl.current.controls().maxPolarAngle = THREE.MathUtils.degToRad(90);
+      globeEl.current.controls().minPolarAngle = THREE.MathUtils.degToRad(90);
+
+      window.addEventListener('resize', () => {
+        // Update sizes
+        sizes.width = window.innerWidth
+        sizes.height = window.innerHeight
+    
+        // Update camera
+        globeEl.current.camera().aspect = sizes.width / sizes.height
+        globeEl.current.camera().updateProjectionMatrix()
+    
+        // Update renderer
+        globeEl.current.renderer().setSize(sizes.width, sizes.height)
+        globeEl.current.renderer().setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      })
     }, []);
 
-    const [countries, setCountries] = useState({ features: []});
-    useEffect(() => {
-      // load data
-      fetch(GeoData).then(res => res.json()).then(setCountries);
-    }, []);
 
 
-    //makes hollow globe
-    const [landPolygons, setLandPolygons] = useState([]);
-    useEffect(() => {
-      // load data
-      fetch('//unpkg.com/world-atlas/land-110m.json').then(res => res.json())
-        .then(landTopo => {
-          setLandPolygons(topojson.feature(landTopo, landTopo.objects.land).features);
-        });
-    }, []);
+
+    
+    
+    
+    const TILE_MARGIN =  0.35; // degrees
+
+    // Gen random data
+    const GRID_SIZE = [20, 10];
     
 
-    const polygonsMaterial = new THREE.MeshLambertMaterial({ color: '#44bada', side: THREE.DoubleSide });
+    const textureLoader=new THREE.TextureLoader();
+    const tileWidth = 360 / GRID_SIZE[0];
+    const tileHeight = 180 / GRID_SIZE[1];
+    // const tileWidth = 20 ;
+    // const tileHeight = 20 ;
+    let i=0;
+    const tilesData = [];
+    i++;
 
-
+    for(let lngIdx=0; lngIdx<GRID_SIZE[0];lngIdx++){
+      for(let latIdx=0;latIdx<GRID_SIZE[1];latIdx++){
+        tilesData.push({
+          lng: -180 + lngIdx * tileWidth,
+          lat: -90 + (latIdx + 0.5) * tileHeight   ,
+          material: new THREE.MeshLambertMaterial({
+            map: textureLoader.load(`/gallery/image${i}.jpg`),
+            color:"white", 
+            opacity:0.9, 
+            transparent:true,
+          })
+        })
+        i++;
+        if(i>7){
+          i=0;
+        }
+      }
+    }
+  
         return ( 
 
             <Globe
                 ref={globeEl}
 
                 //Container Layout
-                width={800}
-                height={800}
-                backgroundImageUrl={bg_galaxy}
-                backgroundColor="rgba(0,0,0,0)"
-                //animateIn = {false}
+                // width={800}
+                // height={800}
+                backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+                backgroundColor="rgba(0,0,0,1)"
+                //animateIn = {true}
 
                 //Globe Layer
-                showGlobe={false} //makes hollow globe
-                globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                showGlobe={true} //makes hollow globe
+                //globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+                //bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
                 showGraticules={false}
                 showAtmosphere={false}
                 atmosphereAltitude = {0.3}
 
-                //Points Layer
-                //pointsData={gData}
-                //pointAltitude="size"
-                //pointColor="color"
-
-                //Polygons Layer
-                polygonsData={landPolygons}
-                polygonCapMaterial={polygonsMaterial}
-                polygonSideColor={() => 'rgba(26.7, 72.9, 85.5, 0.8)'}
-                polygonStrokeColor={() => 'rgba(255,255,255,0.8)'}
-
-                //Hexed Polygons Layer
-                hexPolygonsData={countries.features}
-                hexPolygonResolution={3}
-                hexPolygonAltitude={0.03}
-                hexPolygonMargin={0.3}
-                hexPolygonColor={()=>'rgba(16.5, 47.6, 55.9, 0.5)'}
-                hexPolygonLabel={({ properties: d }) => `
-                  <b>${d.ADMIN} (${d.ISO_A2})</b> <br />
-                  Population: <i>${d.POP_EST}</i>
-                `}
+                //Tiles Layer
+                tilesData={tilesData}
+                tileWidth={tileWidth - TILE_MARGIN}
+                tileHeight={tileHeight - TILE_MARGIN}
+                tileMaterial="material"
 
                 
             /> 
